@@ -19,9 +19,11 @@ export const Modal = ({ children, onModalClose }) => {
     };
   }, [onModalClose]);
 
-  const handleModalClose = useCallback(() => {
+  const handleModalClose = useCallback((e) => {
+  if (e.currentTarget === e.target) {
     onModalClose();
-  }, [onModalClose]);
+  }
+}, [onModalClose]);
 
         return createPortal(
             <ModalOverlay onClick={handleModalClose}>

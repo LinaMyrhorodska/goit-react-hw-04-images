@@ -1,5 +1,5 @@
-import React, { useState, useEffect} from 'react';
-import { ToastContainer } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GlobalStyle } from "./GlobalStyle";
 import { Layout } from "./Layout/Layout";
@@ -9,7 +9,6 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Modal } from './Modal/Modal';
 import { Loader } from './Loader/Loader';
 import { getImages } from './API/getImages';
-import { toast } from "react-toastify";
 
 export const App = () => {
   const [searchedName, setSearchedName] = useState('');
@@ -21,16 +20,16 @@ export const App = () => {
   const [empty, setEmpty] = useState(false);
   const [largeImageURL, setLargeImageURL] = useState('');
   const [alt, setAlt] = useState('');
-  const [showSuccessToast, setShowSuccessToast] = useState(true);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       const API = (name, page) => {
         setLoading(true);
 
         getImages(name, page)
-          .then(r => r.json())
-          .then(data => {
+          .then((r) => r.json())
+          .then((data) => {
             if (data.hits.length === 0) {
               setEmpty(true);
               toast.error(`No images found for "${name}"`);
@@ -48,8 +47,9 @@ useEffect(() => {
               toast.warning("No more pictures left!");
             }
           })
-          .catch(error => {
+          .catch((error) => {
             console.error(error);
+            toast.error("An error occurred while fetching images.");
           })
           .finally(() => {
             setLoading(false);
@@ -86,24 +86,24 @@ useEffect(() => {
   };
 
   const onModalClose = () => {
-setShowModal(false);
-setLargeImageURL('');
-setAlt('');
-};
+    setShowModal(false);
+    setLargeImageURL('');
+    setAlt('');
+  };
 
-return (
-<Layout>
-<ToastContainer autoClose={2000} />
-<SearchBar onSubmit={onFormSubmit} />
-<ImageGallery switchModal={onModalOpen} images={images} />
-{loading && <Loader />}
-{!empty && total / 12 > page && <Button onClick={onLoadMore} />}
-{showModal && (
-<Modal onModalClose={onModalClose}>
-<img src={largeImageURL} alt={alt} />
-</Modal>
-)}
-<GlobalStyle />
-</Layout>
-);
+  return (
+    <Layout>
+      <ToastContainer autoClose={2000} />
+      <SearchBar onSubmit={onFormSubmit} />
+      <ImageGallery switchModal={onModalOpen} images={images} />
+      {loading && <Loader />}
+      {!empty && total / 12 > page && <Button onClick={onLoadMore} />}
+      {showModal && (
+        <Modal onModalClose={onModalClose}>
+          <img src={largeImageURL} alt={alt} />
+        </Modal>
+      )}
+      <GlobalStyle />
+    </Layout>
+  );
 };
