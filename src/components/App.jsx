@@ -17,65 +17,50 @@ export const App = () => {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [empty, setEmpty] = useState(false);
   const [largeImageURL, setLargeImageURL] = useState('');
   const [alt, setAlt] = useState('');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  useEffect(() => {
-    setImages([]);
-    setPage(1);
-    setTotal(0);
-    setLoading(false);
-    setShowModal(false);
-    setEmpty(false);
-  }, [searchedName]);
+useEffect(() => {
+  const fetchData = async (name, page) => {
+    setLoading(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    try {
+      const data = await getImages(name, page);
 
-      try {
-        const response = await getImages(searchedName, page);
-        const data = await response.json();
-
-        if (data.hits.length === 0) {
-          setEmpty(true);
-          toast.error(`No images found for "${searchedName}"`);
-        } else {
-          setImages((prevImages) => [...prevImages, ...data.hits]);
-          setTotal(data.total);
-
-          if (page === 1 && showSuccessToast) {
-            toast.success(`${data.totalHits} images were found`);
-            setShowSuccessToast(false);
-          }
-        }
-
-        if (page >= Math.ceil(data.totalHits / 12) && page !== 1) {
-          toast.warning("No more pictures left!");
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("An error occurred while fetching images.");
-      } finally {
-        setLoading(false);
+      if (data.hits.length === 0) {
+        return toast.error(`No images found for "${name}"`);
       }
-      
-    };
 
-    if (searchedName !== '' || page !== 1) {
-      fetchData();
+      setImages((prevImages) => [...prevImages, ...data.hits]);
+      setTotal(data.totalHits);
+
+      if (page === 1) {
+        toast.success(`${data.totalHits} images were found`);
+      }
+      if (page >= Math.ceil(data.totalHits / 12) && page !== 1) {
+        toast.warning("No more pictures left!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while fetching images.");
+    } finally {
+      setLoading(false);
     }
-  }, [searchedName, page, showSuccessToast]);
+  };
+
+  if (searchedName) {
+    fetchData(searchedName, page);
+  }
+}, [searchedName, page]);
 
   const onFormSubmit = (searchedName) => {
     setSearchedName(searchedName);
+    setImages([]);
+    setPage(1);
   };
 
   const onLoadMore = () => {
-    setPage((prevPage) => prevPage + 1);
-    setShowSuccessToast(true);
+    setPage(prevPage => prevPage + 1);
   };
 
   const onModalOpen = (largeImageURL, alt) => {
@@ -90,13 +75,16 @@ export const App = () => {
     setAlt('');
   };
 
+  const totalPage = total / images.length;
+
   return (
     <Layout>
       <ToastContainer autoClose={2000} />
       <SearchBar onSubmit={onFormSubmit} />
       <ImageGallery switchModal={onModalOpen} images={images} />
       {loading && <Loader />}
-      {!empty && total / 12 > page && <Button onClick={onLoadMore} />}
+      {totalPage > 1 && !loading && images.length !== 0 &&
+        (<Button onClick={onLoadMore} />)}
       {showModal && (
         <Modal onModalClose={onModalClose}>
           <img src={largeImageURL} alt={alt} />
