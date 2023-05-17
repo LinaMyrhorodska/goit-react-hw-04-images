@@ -15,7 +15,7 @@ export const App = () => {
   const [images, setImages] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [empty, setEmpty] = useState(false);
   const [largeImageURL, setLargeImageURL] = useState('');
@@ -23,55 +23,54 @@ export const App = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
+    setImages([]);
+    setPage(1);
+    setTotal(0);
+    setLoading(false);
+    setShowModal(false);
+    setEmpty(false);
+  }, [searchedName]);
+
+  useEffect(() => {
     const fetchData = async () => {
-      const API = (name, page) => {
-        setLoading(true);
+      setLoading(true);
 
-        getImages(name, page)
-          .then((r) => r.json())
-          .then((data) => {
-            if (data.hits.length === 0) {
-              setEmpty(true);
-              toast.error(`No images found for "${name}"`);
-            } else {
-              setImages((prevImages) => [...prevImages, ...data.hits]);
-              setTotal(data.total);
+      try {
+        const response = await getImages(searchedName, page);
+        const data = await response.json();
 
-              if (page === 1 && showSuccessToast) {
-                toast.success(`${data.totalHits} images were found`);
-                setShowSuccessToast(false);
-              }
-            }
+        if (data.hits.length === 0) {
+          setEmpty(true);
+          toast.error(`No images found for "${searchedName}"`);
+        } else {
+          setImages((prevImages) => [...prevImages, ...data.hits]);
+          setTotal(data.total);
 
-            if (page >= Math.ceil(data.totalHits / 12) && page !== 1) {
-              toast.warning("No more pictures left!");
-            }
-          })
-          .catch((error) => {
-            console.error(error);
-            toast.error("An error occurred while fetching images.");
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      };
+          if (page === 1 && showSuccessToast) {
+            toast.success(`${data.totalHits} images were found`);
+            setShowSuccessToast(false);
+          }
+        }
 
-      if (searchedName !== '' || page !== 1) {
-        await API(searchedName, page);
+        if (page >= Math.ceil(data.totalHits / 12) && page !== 1) {
+          toast.warning("No more pictures left!");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("An error occurred while fetching images.");
+      } finally {
+        setLoading(false);
       }
+      
     };
 
-    fetchData();
+    if (searchedName !== '' || page !== 1) {
+      fetchData();
+    }
   }, [searchedName, page, showSuccessToast]);
 
   const onFormSubmit = (searchedName) => {
     setSearchedName(searchedName);
-    setImages([]);
-    setPage(1);
-    setTotal(1);
-    setLoading(false);
-    setShowModal(false);
-    setEmpty(false);
   };
 
   const onLoadMore = () => {
